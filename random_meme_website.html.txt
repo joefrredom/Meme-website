@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meme Central - Random Memes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 2px 2px 4px rgba(0,0,0,0.3), 0 0 10px rgba(255,255,255,0.3); }
+            to { text-shadow: 2px 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.6); }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #ee5a52, #ff6b6b);
+        }
+
+        .meme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .meme-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .meme-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+        }
+
+        .meme-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .meme-card:hover .meme-image {
+            transform: scale(1.05);
+        }
+
+        .meme-info {
+            padding: 15px;
+        }
+
+        .meme-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .meme-title a {
+            color: #333;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .meme-title a:hover {
+            color: #667eea;
+            text-decoration: underline;
+        }
+
+        .meme-category {
+            color: #666;
+            font-size: 0.9rem;
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+            margin: 50px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .meme-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎭 MEME CENTRAL 🎭</h1>
+        <p class="subtitle">Fresh memes every refresh!</p>
+        <button class="refresh-btn" onclick="loadNewMemes()">🔄 Get New Memes</button>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Loading fresh memes...</p>
+    </div>
+
+    <div id="meme-grid" class="meme-grid"></div>
+
+    <div class="stats">
+        <p>🎉 Memes loaded: <span id="meme-count">0</span> | Last refreshed: <span id="last-refresh">Never</span></p>
+    </div>
+
+    <script>
+        // Simulated meme database with categories and links
+        const memeDatabase = [
+            { title: "Distracted Boyfriend", category: "Classic", image: "https://picsum.photos/400/300?random=1", link: "https://knowyourmeme.com/memes/distracted-boyfriend" },
+            { title: "Woman Yelling at Cat", category: "Reaction", image: "https://picsum.photos/400/300?random=2", link: "https://knowyourmeme.com/memes/woman-yelling-at-a-cat" },
+            { title: "Drake Pointing", category: "Choice", image: "https://picsum.photos/400/300?random=3", link: "https://knowyourmeme.com/memes/drakeposting" },
+            { title: "This is Fine Dog", category: "Mood", image: "https://picsum.photos/400/300?random=4", link: "https://knowyourmeme.com/memes/this-is-fine" },
+            { title: "Surprised Pikachu", category: "Reaction", image: "https://picsum.photos/400/300?random=5", link: "https://knowyourmeme.com/memes/surprised-pikachu" },
+            { title: "Expanding Brain", category: "Intelligence", image: "https://picsum.photos/400/300?random=6", link: "https://knowyourmeme.com/memes/expanding-brain" },
+            { title: "Two Buttons", category: "Choice", image: "https://picsum.photos/400/300?random=7", link: "https://knowyourmeme.com/memes/two-buttons" },
+            { title: "Change My Mind", category: "Opinion", image: "https://picsum.photos/400/300?random=8", link: "https://knowyourmeme.com/memes/steven-crowders-change-my-mind-campus-sign" },
+            { title: "Galaxy Brain", category: "Intelligence", image: "https://picsum.photos/400/300?random=9", link: "https://knowyourmeme.com/memes/galaxy-brain" },
+            { title: "Stonks", category: "Finance", image: "https://picsum.photos/400/300?random=10", link: "https://knowyourmeme.com/memes/stonks" },
+            { title: "Bernie Sanders", category: "Politics", image: "https://picsum.photos/400/300?random=11", link: "https://knowyourmeme.com/memes/bernie-sanders-mittens" },
+            { title: "Is This a Pigeon?", category: "Confusion", image: "https://picsum.photos/400/300?random=12", link: "https://knowyourmeme.com/memes/is-this-a-pigeon" },
+            { title: "Mocking SpongeBob", category: "Sarcasm", image: "https://picsum.photos/400/300?random=13", link: "https://knowyourmeme.com/memes/mocking-spongebob" },
+            { title: "Crying Wojak", category: "Sad", image: "https://picsum.photos/400/300?random=14", link: "https://knowyourmeme.com/memes/wojak-feels-guy" },
+            { title: "Chad vs Virgin", category: "Comparison", image: "https://picsum.photos/400/300?random=15", link: "https://knowyourmeme.com/memes/virgin-vs-chad" },
+            { title: "Pepe the Frog", category: "Feels", image: "https://picsum.photos/400/300?random=16", link: "https://knowyourmeme.com/memes/pepe-the-frog" },
+            { title: "Roll Safe", category: "Smart", image: "https://picsum.photos/400/300?random=17", link: "https://knowyourmeme.com/memes/roll-safe" },
+            { title: "Disaster Girl", category: "Chaos", image: "https://picsum.photos/400/300?random=18", link: "https://knowyourmeme.com/memes/disaster-girl" },
+            { title: "Hide the Pain Harold", category: "Pain", image: "https://picsum.photos/400/300?random=19", link: "https://knowyourmeme.com/memes/hide-the-pain-harold" },
+            { title: "Success Kid", category: "Victory", image: "https://picsum.photos/400/300?random=20", link: "https://knowyourmeme.com/memes/success-kid-i-hate-sandcastles" },
+            { title: "Grumpy Cat", category: "Mood", image: "https://picsum.photos/400/300?random=21", link: "https://knowyourmeme.com/memes/grumpy-cat" },
+            { title: "Doge", category: "Wholesome", image: "https://picsum.photos/400/300?random=22", link: "https://knowyourmeme.com/memes/doge" },
+            { title: "Bad Luck Brian", category: "Unlucky", image: "https://picsum.photos/400/300?random=23", link: "https://knowyourmeme.com/memes/bad-luck-brian" },
+            { title: "Overly Attached GF", category: "Relationship", image: "https://picsum.photos/400/300?random=24", link: "https://knowyourmeme.com/memes/overly-attached-girlfriend" },
+            { title: "First World Problems", category: "Privilege", image: "https://picsum.photos/400/300?random=25", link: "https://knowyourmeme.com/memes/first-world-problems" },
+            { title: "Y U No Guy", category: "Frustration", image: "https://picsum.photos/400/300?random=26", link: "https://knowyourmeme.com/memes/y-u-no-guy" },
+            { title: "Philosoraptor", category: "Philosophy", image: "https://picsum.photos/400/300?random=27", link: "https://knowyourmeme.com/memes/philosoraptor" },
+            { title: "Scumbag Steve", category: "Annoying", image: "https://picsum.photos/400/300?random=28", link: "https://knowyourmeme.com/memes/scumbag-steve" },
+            { title: "Good Guy Greg", category: "Wholesome", image: "https://picsum.photos/400/300?random=29", link: "https://knowyourmeme.com/memes/good-guy-greg" },
+            { title: "Awkward Penguin", category: "Social", image: "https://picsum.photos/400/300?random=30", link: "https://knowyourmeme.com/memes/socially-awkward-penguin" },
+            { title: "Troll Face", category: "Trolling", image: "https://picsum.photos/400/300?random=31", link: "https://knowyourmeme.com/memes/trollface" },
+            { title: "Forever Alone", category: "Lonely", image: "https://picsum.photos/400/300?random=32", link: "https://knowyourmeme.com/memes/forever-alone" },
+            { title: "Rage Comics", category: "Rage", image: "https://picsum.photos/400/300?random=33", link: "https://knowyourmeme.com/memes/rage-comics" },
+            { title: "Nyan Cat", category: "Random", image: "https://picsum.photos/400/300?random=34", link: "https://knowyourmeme.com/memes/nyan-cat" },
+            { title: "Rickroll", category: "Prank", image: "https://picsum.photos/400/300?random=35", link: "https://knowyourmeme.com/memes/rickroll" },
+            { title: "Double Rainbow", category: "Wonder", image: "https://picsum.photos/400/300?random=36", link: "https://knowyourmeme.com/memes/double-rainbow" },
+            { title: "Keyboard Cat", category: "Music", image: "https://picsum.photos/400/300?random=37", link: "https://knowyourmeme.com/memes/keyboard-cat" },
+            { title: "David After Dentist", category: "Drugs", image: "https://picsum.photos/400/300?random=38", link: "https://knowyourmeme.com/memes/david-after-dentist" },
+            { title: "Charlie Bit My Finger", category: "Kids", image: "https://picsum.photos/400/300?random=39", link: "https://knowyourmeme.com/memes/charlie-bit-my-finger" },
+            { title: "Gangnam Style", category: "Dance", image: "https://picsum.photos/400/300?random=40", link: "https://knowyourmeme.com/memes/gangnam-style" },
+            { title: "Harlem Shake", category: "Dance", image: "https://picsum.photos/400/300?random=41", link: "https://knowyourmeme.com/memes/harlem-shake" },
+            { title: "Ice Bucket Challenge", category: "Challenge", image: "https://picsum.photos/400/300?random=42", link: "https://knowyourmeme.com/memes/ice-bucket-challenge" },
+            { title: "Mannequin Challenge", category: "Challenge", image: "https://picsum.photos/400/300?random=43", link: "https://knowyourmeme.com/memes/mannequin-challenge" },
+            { title: "Tide Pod Challenge", category: "Dangerous", image: "https://picsum.photos/400/300?random=44", link: "https://knowyourmeme.com/memes/tide-pod-challenge" },
+            { title: "Among Us", category: "Gaming", image: "https://picsum.photos/400/300?random=45", link: "https://knowyourmeme.com/memes/among-us" },
+            { title: "Fall Guys", category: "Gaming", image: "https://picsum.photos/400/300?random=46", link: "https://knowyourmeme.com/memes/fall-guys" },
+            { title: "Animal Crossing", category: "Gaming", image: "https://picsum.photos/400/300?random=47", link: "https://knowyourmeme.com/memes/animal-crossing" },
+            { title: "TikTok Dance", category: "Dance", image: "https://picsum.photos/400/300?random=48", link: "https://knowyourmeme.com/memes/tiktok" },
+            { title: "Baby Yoda", category: "Star Wars", image: "https://picsum.photos/400/300?random=49", link: "https://knowyourmeme.com/memes/baby-yoda" },
+            { title: "OK Boomer", category: "Generation", image: "https://picsum.photos/400/300?random=50", link: "https://knowyourmeme.com/memes/ok-boomer" }
+        ];
+
+        let currentMemes = [];
+        let totalMemesLoaded = 0;
+
+        function getRandomMemes(count = 20) {
+            const shuffled = [...memeDatabase].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        }
+
+        function createMemeCard(meme, index) {
+            return `
+                <div class="meme-card" style="animation-delay: ${index * 0.1}s">
+                    <img src="${meme.image}" alt="${meme.title}" class="meme-image" 
+                         onerror="this.src='https://picsum.photos/400/300?random=${Math.floor(Math.random() * 1000)}'">
+                    <div class="meme-info">
+                        <div class="meme-title">
+                            <a href="${meme.link}" target="_blank" rel="noopener noreferrer">${meme.title}</a>
+                        </div>
+                        <div class="meme-category">${meme.category}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadMemes() {
+            const memeGrid = document.getElementById('meme-grid');
+            const loading = document.getElementById('loading');
+            
+            loading.style.display = 'block';
+            memeGrid.innerHTML = '';
+            
+            setTimeout(() => {
+                currentMemes = getRandomMemes(20);
+                const memeHTML = currentMemes.map((meme, index) => createMemeCard(meme, index)).join('');
+                
+                memeGrid.innerHTML = memeHTML;
+                loading.style.display = 'none';
+                
+                totalMemesLoaded += currentMemes.length;
+                document.getElementById('meme-count').textContent = totalMemesLoaded;
+                document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString();
+            }, 1000);
+        }
+
+        function loadNewMemes() {
+            const refreshBtn = document.querySelector('.refresh-btn');
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '🔄 Loading...';
+            
+            setTimeout(() => {
+                loadMemes();
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = '🔄 Get New Memes';
+            }, 500);
+        }
+
+        // Load initial memes when page loads
+        window.addEventListener('load', loadMemes);
+        
+        // Auto-refresh every 30 seconds (optional)
+        // setInterval(loadMemes, 30000);
+        
+        // Add keyboard shortcut (Space bar to refresh)
+        document.addEventListener('keydown', function(event) {
+            if (event.code === 'Space' && !event.target.matches('input, textarea')) {
+                event.preventDefault();
+                loadNewMemes();
+            }
+        });
+    </script>
+</body>
+</html>
